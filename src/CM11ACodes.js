@@ -45,18 +45,44 @@
             INTERFACE_READY:        0x55    // The interface is ready
         },
 
-        CHECKSUM_CORRECT:       0x00,
-        READY:                  0x55,
-        EXTENDED_TRANSMISSION:  0x07,
-        POLL:                   0x5a,
-        ACK:                    0xc3,
-        POWER_FAIL:             0xa5,
-        CLOCK_UPDATE:           0x9b,
-        EEPROM_DOWNLOAD:        0xfb,
-        RI_ENABLE:              0xeb,
-        RI_DISABLE:             0xdb,
-        EEPROM_ADDRESS:         0x5b,
-        CM11A_STATUS:           0x8b
+        houseCodes: {
+            'A': 0x6,
+            'B': 0xE,
+            'C': 0x2,
+            'D': 0xA,
+            'E': 0x1,
+            'F': 0x9,
+            'G': 0x5,
+            'H': 0xD,
+            'I': 0x7,
+            'J': 0xF,
+            'K': 0x3,
+            'L': 0xB,
+            'M': 0x0,
+            'N': 0x8,
+            'O': 0x4,
+            'P': 0xC
+        },
+
+        unitCodes: {
+            '1':  0x6,
+            '2':  0xE,
+            '3':  0x2,
+            '4':  0xA,
+            '5':  0x1,
+            '6':  0x9,
+            '7':  0x5,
+            '8':  0xD,
+            '9':  0x7,
+            '10': 0xF,
+            '11': 0x3,
+            '12': 0xB,
+            '13': 0x0,
+            '14': 0x8,
+            '15': 0x4,
+            '16': 0xC
+        }
+
     };
 
 })();

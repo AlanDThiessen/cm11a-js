@@ -24,68 +24,35 @@
  *
  ******************************************************************************/
 
+(function() {
+    'use strict';
 
-const HOUSE_ENCMAP = {
-    'A': 0x6,
-    'B': 0xE,
-    'C': 0x2,
-    'D': 0xA,
-    'E': 0x1,
-    'F': 0x9,
-    'G': 0x5,
-    'H': 0xD,
-    'I': 0x7,
-    'J': 0xF,
-    'K': 0x3,
-    'L': 0xB,
-    'M': 0x0,
-    'N': 0x8,
-    'O': 0x4,
-    'P': 0xC
-};
+    var cm11aCodes = require('CM11ACodes.js');
 
 
-const UNIT_ENCMAP = {
-    '1': 0x6,
-    '2': 0xE,
-    '3': 0x2,
-    '4': 0xA,
-    '5': 0x1,
-    '6': 0x9,
-    '7': 0x5,
-    '8': 0xD,
-    '9': 0x7,
-    '10': 0xF,
-    '11': 0x3,
-    '12': 0xB,
-    '13': 0x0,
-    '14': 0x8,
-    '15': 0x4,
-    '16': 0xC
-};
+    var unitAddress = {
+        'house': undefined,
+        'unit': undefined,
+
+        'SetAddress': SetAddress
+    };
 
 
-var x10Address = {
-    'house': undefined,
-    'unit': undefined,
-
-    'SetAddress': SetAddress
-};
-
-
-function SetAddress(house, unit) {
-    if(HOUSE_ENCMAP.hasOwnProperty(house) || UNIT_ENCMAP.hasOwnProperty(unit)) {
-        this.house = HOUSE_ENCMAP[house];
-        this.unit =  UNIT_ENCMAP[unit];
+    function SetAddress(house, unit) {
+        if (cm11aCodes.houseCodes.hasOwnProperty(house) || cm11aCodes.unitCodes.hasOwnProperty(unit)) {
+            this.house = cm11aCodes.houseCodes[house];
+            this.unit = cm11aCodes.unitCodes[unit];
+        }
     }
-}
 
 
-function X10Address(house, unit) {
-    var address = Object.create(x10Address);
-    address.SetAddress(house, unit);
-    return address;
-}
+    function UnitAddress(house, unit) {
+        var address = Object.create(unitAddress);
+        address.SetAddress(house, unit);
+        return address;
+    }
 
 
-module.exports = X10Address;
+    module.exports = UnitAddress;
+
+})();
