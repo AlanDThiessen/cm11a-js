@@ -105,7 +105,7 @@
         this.data = this.data.concat(data);
 
         if(this.data.length >= STAUS_REQUEST_NUM_BYTES) {
-            var status = ParseStatus(data);
+            var status = ParseStatus(this.data);
             this.ctrl.notifyCM11AStatus(status);
             this.done(status);
         }
@@ -124,9 +124,9 @@
             },
             monitoredDevices: {
                 houseCode: data[7] >> 4,
-                addresed: (data[8] << 8) | (data[9]),
-                onOffStatus: (data[10] << 8) | (data[11]),
-                dimStatus: (data[12] << 8) | (data[13]),
+                addresed: (data[9] << 8) | (data[8]),
+                onOffStatus: (data[11] << 8) | (data[10]),
+                dimStatus: (data[13] << 8) | (data[12]),
             },
             dayMask: data[6] & 0x7F,
         }
