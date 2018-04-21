@@ -117,7 +117,7 @@
             batteryTimer: (data[0] << 8) | (data[1]),
             firmwareRev: data[7] & 0x0F,
             time: {
-                year: data[5] + ((data[6] & 0x80) << 1),
+                dayOfYear: data[5] + 1 + ((data[6] & 0x80) << 1),
                 hours: (data[4] * 2) + (data[3] >= 60) ? 1 : 0,
                 minutes: data[3] % 60,
                 seconds: data[2]
