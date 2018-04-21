@@ -27,11 +27,17 @@
 (function() {
     'use strict';
 
-    const SerialPort = require('serialport/test');
+    const SerialPort = require('serialport');
     const cm11aCodes = require('./CM11ACodes');
     const transactions = require('./CM11ATransactions');
 
     var CM11A_BUAD = 4800;
+
+    var EVENTS = {
+        'unitStatus':   0,
+        'status':       1,
+        'close':        2
+    };
 
 
     var CM11A = {
@@ -39,10 +45,17 @@
         running: false,
         currentTrans: undefined,
         transactionQueue: [],
+        events: {
+            'unitStatus': undefined,
+            'status': undefined,
+            'close': undefined
+        },
 
         // CM11A Commands
+        on: SetEvent,
         start: Start,
         stop: Stop,
+        stopped: Stopped,
 
         // Unit Function Commands
         turnOn: TurnOn,
@@ -60,6 +73,18 @@
     };
 
 
+    function SetEvent(event, callBack) {
+        if(!this.events.hasOwnProperty(event)) {
+            throw('Invalid event: ' + event);
+        }
+        else if(typeof(callBack) !== 'function') {
+            throw('Expected function for callBack.');
+        }
+        else {
+            this.events[event] = callBack;
+        }
+    }
+
     /***
      * @returns {boolean}
      */
@@ -74,6 +99,9 @@
                 ctrl.read(data);
             });
             this.serial.on('error', HandleError);
+            this.serial.on('close', function() {
+                ctrl.stopped();
+            });
             this.running = true;
         }
 
@@ -86,14 +114,23 @@
      */
     function Stop() {
         if(this.currentTrans) {
+            /* For now, let the transaction complete gracefully
             this.currentTrans.error('Shutting Down.');
+            */
+            this.running = false;
         }
-
-        if(this.running) {
+        else {
             this.serial.close();
         }
+    }
 
-        return this.running;
+
+    function Stopped() {
+        this.running = false;
+
+        if(this.events.close) {
+            this.events.close();
+        }
     }
 
 
@@ -103,7 +140,13 @@
         if(ctrl.running) {
             if (ctrl.currentTrans === undefined) {
                 ctrl.currentTrans = trans;
-                ctrl.currentTrans.run().then(ctrl.runQueuedTransaction, ctrl.runQueuedTransaction);
+                ctrl.currentTrans.run().then(
+                    function() {
+                        ctrl.runQueuedTransaction();
+                    },
+                    function() {
+                        ctrl.runQueuedTransaction();
+                    });
             }
             else {
                 ctrl.transactionQueue.push(trans);
@@ -117,8 +160,13 @@
 
         ctrl.currentTrans = undefined;
 
-        if(ctrl.transactionQueue.length > 0) {
-            ctrl.runTransaction(ctrl.transactionQueue.shift());
+        if(ctrl.running) {
+            if (ctrl.transactionQueue.length > 0) {
+                ctrl.runTransaction(ctrl.transactionQueue.shift());
+            }
+        }
+        else {
+            ctrl.serial.close();
         }
     }
 
@@ -163,7 +211,15 @@
             if(!usedBuffer) {
                 if(buffer[0] == cm11aCodes.rx.POLL_REQUEST) {
                     var pollResp = transactions.PollResponse(this, buffer);
-                    RunTransaction(pollResp);
+                    this.runTransaction(pollResp);
+                }
+                else if(buffer[0] == cm11aCodes.rx.POLL_POWER_FAIL) {
+                    var setClock = transactions.SetClock(this);
+                    this.runTransaction(setClock);
+                }
+                else if(buffer[0] == cm11aCodes.rx.POLL_EEPROM_ADDRESS) {
+                    var eepromAddress = transactions.EepromAddress(this, buffer);
+                    this.runTransaction(eepromAddress);
                 }
             }
         }
@@ -171,12 +227,20 @@
 
 
     function NotifyUnitStatus(x10Function, houseCode, level, units ) {
-
+        if(this.events.unitStatus !== undefined) {
+            this.events.unitStatus( {
+                'units': units,
+                'x10Function': x10Function,
+                'level': level
+            });
+        }
     }
 
 
     function NotifyStatus(status) {
-
+        if(this.events.status !== undefined) {
+            this.events.status(status);
+        }
     }
 
 

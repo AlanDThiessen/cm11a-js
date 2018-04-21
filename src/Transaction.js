@@ -61,17 +61,17 @@
     function Run() {
         var trans = this;
 
-        trans.promise = new Promise(function() {
+        return new Promise(function(resolve, reject) {
+            trans.resolve = resolve;
+            trans.reject = reject;
             trans.start();
         });
-
-        return trans.promise;
     }
 
 
     function Done(status) {
-        if(this.promise) {
-            this.promse.resolve(status);
+        if(this.resolve) {
+            this.resolve(status);
         }
     }
 
@@ -79,8 +79,8 @@
     function Error(error) {
         console.log('Transaction Failed: ' + error);
 
-        if(this.promise) {
-            this.promse.reject(error);
+        if(this.reject) {
+            this.reject(error);
         }
     }
 
