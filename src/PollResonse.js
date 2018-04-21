@@ -27,34 +27,28 @@
 (function() {
     'use strict';
 
+    var Transaction = require('Transaction.js');
     var cm11aCodes = require('CM11ACodes.js');
 
 
-    var unitAddress = {
-        'house': undefined,
-        'unit': undefined,
-        'address': 0,
-
-        'SetAddress': SetAddress
-    };
+    function PollResponse(ctrl, data) {
+        var trans = Transaction(ctrl, PRStart, null);
+        trans.data = [].concat(data);
+        return trans;
+    }
 
 
-    function SetAddress(house, unit) {
-        if (cm11aCodes.houseCodes.hasOwnProperty(house) || cm11aCodes.unitCodes.hasOwnProperty(unit)) {
-            this.house = house;
-            this.unit = unit;
-            this.adress = ((cm11aCodes.houseCodes[house] << 4) | (cm11aCodes.unitCodes[unit]) & 0xFF);
+    function PRStart() {
+        if(this.data.length > 0) {
+            if(this.data[0] == cm11aCodes.rx.POLL_REQUEST) {
+                this.ctrl.write([cm11aCodes.tx.POLL_RESPONSE]);
+            }
         }
+
+        this.done();
     }
 
 
-    function UnitAddress(house, unit) {
-        var address = Object.create(unitAddress);
-        address.SetAddress(house, unit);
-        return address;
-    }
-
-
-    module.exports = UnitAddress;
+    module.exports = PollResponse;
 
 })();

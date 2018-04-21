@@ -24,37 +24,18 @@
  *
  ******************************************************************************/
 
+
 (function() {
     'use strict';
 
-    var cm11aCodes = require('CM11ACodes.js');
-
-
-    var unitAddress = {
-        'house': undefined,
-        'unit': undefined,
-        'address': 0,
-
-        'SetAddress': SetAddress
-    };
-
-
-    function SetAddress(house, unit) {
-        if (cm11aCodes.houseCodes.hasOwnProperty(house) || cm11aCodes.unitCodes.hasOwnProperty(unit)) {
-            this.house = house;
-            this.unit = unit;
-            this.adress = ((cm11aCodes.houseCodes[house] << 4) | (cm11aCodes.unitCodes[unit]) & 0xFF);
-        }
+    module.export = {
+        BaseTransaction: require('Transaction.js'),
+        Command: require('Command.js'),
+        EepromAddress: require('EepromAddress.js'),
+        PollResponse: require('PollResonse.js'),
+        SetClock: require('SetClock.js'),
+        StatusRequest: require('StatusRequest.js')
     }
-
-
-    function UnitAddress(house, unit) {
-        var address = Object.create(unitAddress);
-        address.SetAddress(house, unit);
-        return address;
-    }
-
-
-    module.exports = UnitAddress;
 
 })();
+

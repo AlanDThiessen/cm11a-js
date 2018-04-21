@@ -45,6 +45,25 @@
             INTERFACE_READY:        0x55    // The interface is ready
         },
 
+        functionCodes: {
+            ALL_UNITS_OFF:          0x00,
+            ALL_LIGHTS_ON:          0x01,
+            ON:                     0x02,
+            OFF:                    0x03,
+            DIM:                    0x04,
+            BRIGHT:                 0x05,
+            ALL_LIGHTS_OFF:         0x06,
+            EXT_CODE:               0x07,
+            HAIL_REQUEST:           0x08,
+            HAIL_ACK:               0x09,
+            PRESET_DIM1:            0x0A,
+            PRESET_DIM2:            0x0B,
+            EXT_DATA_XFER:          0x0C,
+            STATUS_ON:              0x0D,
+            STATUS_OFF:             0x0E,
+            STATUS_REQUEST:         0x0F
+        },
+
         houseCodes: {
             'A': 0x6,
             'B': 0xE,

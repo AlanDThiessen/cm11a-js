@@ -28,33 +28,80 @@
     'use strict';
 
     var TransactionObj = {
-        init: Init,
-        Start: function() {},
-        HandleMessage: function(message) {},
-        IsComplete: function() { return false; }
+        'init': Init,
+        'run': Run,
+        'start': DefaultStart,
+        'handleMessage': DefaultHandleMessage,
+        'done': Done,
+        'error': Error
     };
 
 
-    function Init(ctrl, start, rxCallback, isComplete) {
+    /***
+     * @param ctrl
+     * @param start - Must be a real function
+     * @param rxCallback - Can be null or a function reference
+     * @param isComplete - Must be a real function
+     */
+    function Init(ctrl, start, rxCallback) {
         if(typeof(start) !== 'function') {
             throw("Transaction: Expected 'start' to be a function");
-        }
-        else if(typeof(rxCallback) !== 'function') {
-            throw("Transaction: Expected 'rxCallback' to be a function");
         }
         else if(typeof(isComplete) !== 'function') {
             throw("Transaction: Expected 'isComplete' to be a function");
         }
+        else if((rxCallBack !== null) && (typeof(rxCallback) !== 'function')) {
+            throw("Transaction: Expected 'rxCallback' to be a function");
+        }
         else {
+            this.promise = undefined;
             this.ctrl = ctrl;
-            this.Start = start;
-            this.HandleMessage = rxCallback;
-            this.IsComplete = isComplete;
+            this.start = start;
+            this.handleMessage = rxCallback;
+        }
+    }
+
+    function Run() {
+        this.promise = new Promise(this.start);
+        return this.promise;
+    }
+
+
+    function Done(status) {
+        if(this.promise) {
+            this.promse.resolve(status);
         }
     }
 
 
-    function Transaction(ctrl, start, rxCallBack, isComplete) {
+    function Error(error) {
+        console.log('Transaction Failed: ' + error);
+
+        if(this.promise) {
+            this.promse.reject(error);
+        }
+    }
+
+
+    function DefaultStart() {
+        this.Done();
+    }
+
+
+    function DefaultHandleMessage(data) {
+        return false;
+    }
+
+
+    /***
+     * @param ctrl
+     * @param start
+     * @param rxCallBack
+     * @param isComplete
+     * @returns {TransactionObj}
+     * @constructor
+     */
+    function Transaction(ctrl, start, rxCallBack) {
         var trans = Object.create(TransactionObj);
         trans.Init(start, rxCallBack, isComplete);
         return trans;

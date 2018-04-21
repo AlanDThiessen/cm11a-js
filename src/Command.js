@@ -29,32 +29,32 @@
     'use strict';
 
     var Transaction = require('Transaction.js');
+    var cm11aCodes = require('CM11ACodes.js');
 
     var ACTIONS = {
         ACTION_ADDRESS: 0,
         ACTION_FUNCTION: 1
     };
 
-    var STATES = {
-        STATE_NOT_STARTED: 0,
-        STATE_VALIDATE_CHECKSUM: 1,
-        STATE_WAIT_READY: 2,
-        STATE_COMPLETE: 3
-    };
 
     var MAX_ATTEMPTS = 5;
+    var MAX_DIM = 22;
 
     function Command(ctrl, x10Func, units, level) {
-        var trans = Transaction(ctrl, CmdStart, CmdRxCallBack, CmdComplete);
+        var trans = Transaction(ctrl, CmdStart, CmdRxCallBack);
         trans.x10Func = x10Func;
         trans.units = units;
         trans.level = level;
-        trans.state = STATES.STATE_NOT_STARTED;
         trans.numAttempts = 0;
-        trans.currentUnit = undefined;
+        trans.currentUnit = 0;
         trans.checksum = 0;
+        trans.state = function() { return false; };
+        trans.houseCode = 'A';
 
         trans.AddressUnit = AddressUnit;
+        trans.SendFunction = SendFunction;
+        trans.StateValidateChecksum = StateValidateChecksum;
+        trans.StateWaitReady = StateWaitReady;
 
         return trans;
     }
@@ -62,28 +62,124 @@
 
     function CmdStart() {
         if(this.AddressUnit()) {
-            this.state = STATES.STATE_VALIDATE_CHECKSUM;
+            this.state = this.StateValidateChecksum;
         }
         else {
-            this.state = STATES.STATE_COMPLETE;
+            this.error('No units to send commend to.');
         }
     }
 
 
     function CmdRxCallBack(data) {
+        return this.state(data);
+    }
 
+    /***
+     * @param data
+     * @returns {boolean}
+     */
+    function StateValidateChecksum(data) {
+        if(data.length > 0) {
+            var checksum = data[0];
+
+            if(checksum == this.checksum) {
+                this.ctrl.write([cm11aCodes.tx.XMIT_OK]);
+                this.state = this.StateWaitReady;
+            }
+        }
+        else {
+            this.numAttempts++;
+
+            if(this.numAttempts > MAX_ATTEMPTS) {
+                this.error('Max attempts exceeded sending commend.');
+            }
+            else {
+                if(this.action == ACTIONS.ACTION_ADDRESS) {
+                    this.AddressUnit();
+                }
+                else if(this.action == ACTIONS.ACTION_FUNCTION) {
+                    this.SendFunction();
+                }
+            }
+        }
+
+        return true;
+    }
+
+
+    /***
+     * @param data
+     * @returns {boolean}
+     */
+    function StateWaitReady(data) {
+        if(data.length > 0) {
+            var response = data[0];
+
+            if(response == cm11aCodes.rx.INTERFACE_READY) {
+                if(this.action == ACTIONS.ACTION_ADDRESS) {
+                    this.currentUnit++;
+
+                    if(!this.AddressUnit()) {
+                        // No more units to address
+                        this.SendFunction();
+                    }
+
+                    this.state = this.StateValidateChecksum;
+                }
+                else if(this.action == ACTIONS.ACTION_FUNCTION) {
+                    this.ctrl.notifyUnitStatus(this.x10Func, this.houseCode, this.level, this.units);
+                    this.done();
+                }
+            }
+            else {
+                this.numAttempts++;
+
+                if(this.numAttempts > MAX_ATTEMPTS) {
+                    this.error('Max attempts exceeded sending commend.');
+                }
+            }
+        }
+
+        return true;
     }
 
 
     /***
      * @returns {boolean}
      */
-    function CmdComplete() {
-        return (this.state === STATE.STATE_COMPLETE);
+    function AddressUnit() {
+        var unitAddressed = false;
+
+        if( this.currentUnit < this.units.length ) {
+            this.action = ACTIONS.ACTION_ADDRESS;
+            this.ctrl.write([cm11aCodes.tx.HDR_SEL, this.units[this.currentUnit].address]);
+            this.checksum = (cm11aCodes.tx.HDR_SEL + this.units[this.currentUnit].address) & 0x00FF;
+            unitAddressed = true;
+        }
+
+        return unitAddressed;
     }
 
 
-    function AddressUnit() {
+    /***
+     */
+    function SendFunction() {
+        this.action = ACTIONS.ACTION_FUNCTION;
+        this.houseCode = this.units[0].house;
+
+        var cmd = (cm11aCodes.houseCodes[this.houseCode] << 4) | this.x10Func;
+        var header = cm11aCodes.tx.HDR_FUN;
+
+        if(this.level > MAX_DIM) {
+            this.level = MAX_DIM;
+        }
+
+        if((this.x10Func == cm11aCodes.functionCodes.DIM) || (this.x10Func == cm11aCodes.functionCodes.BRIGHT)) {
+            header |= (this.level << 3)
+        }
+
+        this.checksum = (header + cmd) & 0x00FF;
+        this.ctrl.write([header, cmd]);
     }
 
 

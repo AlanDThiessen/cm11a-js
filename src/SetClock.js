@@ -31,28 +31,22 @@
     var cm11aCodes = require('CM11ACodes.js');
 
 
-    function SetClock(ctrl, x10Func, units, level) {
-        var trans = Transaction(ctrl, SCStart, SCRxCallBack, SCComplete);
+    function SetClock(ctrl) {
+        var trans = Transaction(ctrl, SCStart, null);
+        trans.data = [].concat(data);
         return trans;
     }
 
 
     function SCStart() {
         // For now, just send the header to shut up the device
-        this.ctrl.write([cm11aCodes.tx.POLL_PF_RESP]);
-    }
+        if(this.data.length > 0) {
+            if(this.data[0] == cm11aCodes.rx.POLL_POWER_FAIL) {
+                this.ctrl.write([cm11aCodes.tx.POLL_PF_RESP]);
+            }
+        }
 
-
-    function SCRxCallBack(data) {
-
-    }
-
-
-    /***
-     * @returns {boolean}
-     */
-    function SCComplete() {
-        return true;
+        this.done();
     }
 
 
