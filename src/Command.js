@@ -79,15 +79,19 @@
      * @returns {boolean}
      */
     function StateValidateChecksum(data) {
+        var retry = true;
+
         if(data.length > 0) {
             var checksum = data[0];
 
             if(checksum == this.checksum) {
                 this.ctrl.write([cm11aCodes.tx.XMIT_OK]);
                 this.state = this.StateWaitReady;
+                retry = false;
             }
         }
-        else {
+
+        if(retry) {
             this.numAttempts++;
 
             if(this.numAttempts > MAX_ATTEMPTS) {

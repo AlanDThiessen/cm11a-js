@@ -70,7 +70,9 @@
             });
 
             var ctrl = this;
-            this.serial.on('data', ctrl.read);
+            this.serial.on('data', function(data) {
+                ctrl.read(data);
+            });
             this.serial.on('error', HandleError);
             this.running = true;
         }
@@ -155,7 +157,7 @@
             var usedBuffer = false;
 
             if(this.currentTrans) {
-                usedBuffer = this.currentTrans.HandleMessage(buffer);
+                usedBuffer = this.currentTrans.handleMessage(buffer);
             }
 
             if(!usedBuffer) {
