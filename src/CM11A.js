@@ -62,6 +62,7 @@
         turnOff: TurnOff,
         dim: Dim,
         bright: Bright,
+        status: Status,
 
         // Callback methods
         notifyUnitStatus: NotifyUnitStatus,
@@ -194,6 +195,12 @@
     function Bright(units, level) {
         var command = transactions.Command(this, cm11aCodes.functionCodes.BRIGHT, units, level);
         this.runTransaction(command);
+    }
+
+
+    function Status() {
+        var status = transactions.StatusRequest(this);
+        this.runTransaction(status);
     }
 
 
