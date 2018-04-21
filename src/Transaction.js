@@ -47,10 +47,7 @@
         if(typeof(start) !== 'function') {
             throw("Transaction: Expected 'start' to be a function");
         }
-        else if(typeof(isComplete) !== 'function') {
-            throw("Transaction: Expected 'isComplete' to be a function");
-        }
-        else if((rxCallBack !== null) && (typeof(rxCallback) !== 'function')) {
+        else if((rxCallback !== null) && (typeof(rxCallback) !== 'function')) {
             throw("Transaction: Expected 'rxCallback' to be a function");
         }
         else {
@@ -62,8 +59,13 @@
     }
 
     function Run() {
-        this.promise = new Promise(this.start);
-        return this.promise;
+        var trans = this;
+
+        trans.promise = new Promise(function() {
+            trans.start();
+        });
+
+        return trans.promise;
     }
 
 
@@ -103,7 +105,7 @@
      */
     function Transaction(ctrl, start, rxCallBack) {
         var trans = Object.create(TransactionObj);
-        trans.Init(start, rxCallBack, isComplete);
+        trans.init(ctrl, start, rxCallBack);
         return trans;
     }
 

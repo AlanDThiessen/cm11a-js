@@ -79,8 +79,8 @@
 (function() {
     'use strict';
 
-    var Transaction = require('Transaction.js');
-    var cm11aCodes = require('CM11ACodes.js');
+    var Transaction = require('./Transaction');
+    var cm11aCodes = require('./CM11ACodes');
 
     var STAUS_REQUEST_NUM_BYTES = 14;
 

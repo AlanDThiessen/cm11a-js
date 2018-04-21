@@ -1,3 +1,4 @@
+
 /******************************************************************************
  *
  * The MIT License (MIT)
@@ -24,37 +25,27 @@
  *
  ******************************************************************************/
 
-(function() {
-    'use strict';
 
-    var cm11aCodes = require('./CM11ACodes');
+// TODO: Eventually use Jasmine or Chai to create auto tests
+// For now... run manual testing
 
+const SerialPort = require('serialport/test');
+const MockBinding = SerialPort.Binding;
+const CM11A = require('../src/CM11A');
+const x10Addr = require('../src/UnitAddress');
+const cm11aCodes = require('../src/CM11ACodes');
 
-    var unitAddress = {
-        'house': undefined,
-        'unit': undefined,
-        'address': 0,
+// Create a port and enable the echo and recording.
+MockBinding.createPort('/dev/MOCK', { echo: true, readyData: [0x00] });
 
-        'SetAddress': SetAddress
-    };
+/*
+var port = new SerialPort('/dev/MOCK', {
+    baudRate: 4800
+});
+*/
+var cm11 = CM11A();
 
-
-    function SetAddress(house, unit) {
-        if (cm11aCodes.houseCodes.hasOwnProperty(house) || cm11aCodes.unitCodes.hasOwnProperty(unit)) {
-            this.house = house;
-            this.unit = unit;
-            this.address = ((cm11aCodes.houseCodes[house] << 4) | (cm11aCodes.unitCodes[unit]) & 0xFF);
-        }
-    }
-
-
-    function UnitAddress(house, unit) {
-        var address = Object.create(unitAddress);
-        address.SetAddress(house, unit);
-        return address;
-    }
-
-
-    module.exports = UnitAddress;
-
-})();
+cm11.start('/dev/MOCK');
+var addr = x10Addr('A', '1');
+//port.write([cm11aCodes.rx.POLL_REQUEST]);
+cm11.turnOn([addr]);

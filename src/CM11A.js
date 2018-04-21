@@ -27,9 +27,9 @@
 (function() {
     'use strict';
 
-    var SerialPort = require('serialport');
-    var cm11aCodes = require('CM11ACodes.js');
-    var transactions = require('CM11ATransactions.js');
+    const SerialPort = require('serialport/test');
+    const cm11aCodes = require('./CM11ACodes');
+    const transactions = require('./CM11ATransactions');
 
     var CM11A_BUAD = 4800;
 
@@ -63,13 +63,14 @@
     /***
      * @returns {boolean}
      */
-    function Start() {
+    function Start(device) {
         if(!this.running) {
-            this.serial = new Serial('/dev/ttyUSB0', {
+            this.serial = new SerialPort(device, {
                 baudRate: 4800
             });
 
-            this.serial.on('data', this.read);
+            var ctrl = this;
+            this.serial.on('data', ctrl.read);
             this.serial.on('error', HandleError);
             this.running = true;
         }
@@ -95,23 +96,27 @@
 
 
     function RunTransaction(trans) {
-        if(this.running) {
-            if (this.currentTrans === undefined) {
-                this.currentTrans = trans;
-                this.currentTrans.run().finally(this.runQueuedTransaction);
+        var ctrl = this;
+
+        if(ctrl.running) {
+            if (ctrl.currentTrans === undefined) {
+                ctrl.currentTrans = trans;
+                ctrl.currentTrans.run().then(ctrl.runQueuedTransaction, ctrl.runQueuedTransaction);
             }
             else {
-                this.transactionQueue.push(trans);
+                ctrl.transactionQueue.push(trans);
             }
         }
     }
 
 
     function RunQueuedTransaction() {
-        this.currentTrans = undefined;
+        var ctrl = this;
 
-        if(this.transactionQueue.length > 0) {
-            RunTransaction(this.transactionQueue.shift());
+        ctrl.currentTrans = undefined;
+
+        if(ctrl.transactionQueue.length > 0) {
+            ctrl.runTransaction(ctrl.transactionQueue.shift());
         }
     }
 
@@ -147,8 +152,17 @@
         var buffer = new Buffer(data);
 
         if(buffer.length > 0) {
+            var usedBuffer = false;
+
             if(this.currentTrans) {
-                this.currentTrans.HandleMessage(buffer);
+                usedBuffer = this.currentTrans.HandleMessage(buffer);
+            }
+
+            if(!usedBuffer) {
+                if(buffer[0] == cm11aCodes.rx.POLL_REQUEST) {
+                    var pollResp = transactions.PollResponse(this, buffer);
+                    RunTransaction(pollResp);
+                }
             }
         }
     }

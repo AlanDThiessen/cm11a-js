@@ -28,13 +28,13 @@
 (function() {
     'use strict';
 
-    module.export = {
-        BaseTransaction: require('Transaction.js'),
-        Command: require('Command.js'),
-        EepromAddress: require('EepromAddress.js'),
-        PollResponse: require('PollResonse.js'),
-        SetClock: require('SetClock.js'),
-        StatusRequest: require('StatusRequest.js')
+    module.exports = {
+        BaseTransaction: require('./Transaction'),
+        Command: require('./Command'),
+        EepromAddress: require('./EepromAddress'),
+        PollResponse: require('./PollResonse'),
+        SetClock: require('./SetClock'),
+        StatusRequest: require('./StatusRequest')
     }
 
 })();
