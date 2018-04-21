@@ -45,6 +45,7 @@
         running: false,
         currentTrans: undefined,
         transactionQueue: [],
+        timer: undefined,
         events: {
             'unitStatus': undefined,
             'status': undefined,
@@ -69,10 +70,12 @@
         notifyCM11AStatus: NotifyStatus,
         write: SerialWrite,
         read: SerialRead,
+        cancelTimer: CancelTimer,
 
         // Internally called methods
         runTransaction: RunTransaction,
-        runQueuedTransaction: RunQueuedTransaction
+        runQueuedTransaction: RunQueuedTransaction,
+        timeout: Timeout
     };
 
 
@@ -210,12 +213,19 @@
     }
 
 
-    function SerialWrite(data) {
+    function SerialWrite(data, timer) {
         this.serial.write(data, function(error) {
             if(error) {
                 console.log('Error Writing to CM11A.');
             }
         });
+
+        var ctrl = this;
+        if(timer !== undefined) {
+            setTimeout(function() {
+                ctrl.timeout();
+            }, timer);
+        }
     }
 
 
@@ -227,7 +237,7 @@
             var usedBuffer = false;
 
             if(this.currentTrans) {
-                usedBuffer = this.currentTrans.handleMessage(readData);
+                usedBuffer = this.currentTrans.handleMessage(Array.from(readData));
             }
 
             if(!usedBuffer) {
@@ -244,6 +254,20 @@
                     this.runTransaction(eepromAddress);
                 }
             }
+        }
+    }
+
+
+    function CancelTimer() {
+        if(this.timer !== undefined) {
+            clearTimeout(this.timer);
+        }
+    }
+
+
+    function Timeout() {
+        if(this.currentTrans !== undefined) {
+            this.currentTrans.handleMessage([]);
         }
     }
 

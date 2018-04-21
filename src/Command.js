@@ -85,7 +85,8 @@
             var checksum = data[0];
 
             if(checksum == this.checksum) {
-                this.ctrl.write([cm11aCodes.tx.XMIT_OK]);
+                this.ctrl.cancelTimer();
+                this.ctrl.write([cm11aCodes.tx.XMIT_OK], 1000);
                 this.state = this.StateWaitReady;
                 retry = false;
             }
@@ -116,8 +117,12 @@
      * @returns {boolean}
      */
     function StateWaitReady(data) {
+        var retry = true;
+
         if(data.length > 0) {
             var response = data[0];
+
+            this.ctrl.cancelTimer();
 
             if(response == cm11aCodes.rx.INTERFACE_READY) {
                 if(this.action == ACTIONS.ACTION_ADDRESS) {
@@ -134,12 +139,23 @@
                     this.ctrl.notifyUnitStatus(this.x10Func, this.houseCode, this.level, this.units);
                     this.done();
                 }
+
+                retry = false;
+            }
+        }
+
+        if(retry) {
+            this.numAttempts++;
+
+            if(this.numAttempts > MAX_ATTEMPTS) {
+                this.error('Max attempts exceeded sending commend.');
             }
             else {
-                this.numAttempts++;
-
-                if(this.numAttempts > MAX_ATTEMPTS) {
-                    this.error('Max attempts exceeded sending commend.');
+                if(this.action == ACTIONS.ACTION_ADDRESS) {
+                    this.AddressUnit();
+                }
+                else if(this.action == ACTIONS.ACTION_FUNCTION) {
+                    this.SendFunction();
                 }
             }
         }
@@ -156,7 +172,7 @@
 
         if( this.currentUnit < this.units.length ) {
             this.action = ACTIONS.ACTION_ADDRESS;
-            this.ctrl.write([cm11aCodes.tx.HDR_SEL, this.units[this.currentUnit].address]);
+            this.ctrl.write([cm11aCodes.tx.HDR_SEL, this.units[this.currentUnit].address], 1000);
             this.checksum = (cm11aCodes.tx.HDR_SEL + this.units[this.currentUnit].address) & 0x00FF;
             unitAddressed = true;
         }
@@ -183,7 +199,7 @@
         }
 
         this.checksum = (header + cmd) & 0x00FF;
-        this.ctrl.write([header, cmd]);
+        this.ctrl.write([header, cmd], 1000);
     }
 
 
