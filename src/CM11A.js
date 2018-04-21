@@ -222,7 +222,7 @@
 
         var ctrl = this;
         if(timer !== undefined) {
-            setTimeout(function() {
+            ctrl.timer = setTimeout(function() {
                 ctrl.timeout();
             }, timer);
         }
@@ -261,6 +261,7 @@
     function CancelTimer() {
         if(this.timer !== undefined) {
             clearTimeout(this.timer);
+            this.timer = undefined;
         }
     }
 
