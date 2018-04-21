@@ -60,6 +60,8 @@
         // Unit Function Commands
         turnOn: TurnOn,
         turnOff: TurnOff,
+        dim: Dim,
+        bright: Bright,
 
         // Callback methods
         notifyUnitStatus: NotifyUnitStatus,
@@ -183,6 +185,18 @@
     }
 
 
+    function Dim(units, level) {
+        var command = transactions.Command(this, cm11aCodes.functionCodes.DIM, units, level);
+        this.runTransaction(command);
+    }
+
+
+    function Bright(units, level) {
+        var command = transactions.Command(this, cm11aCodes.functionCodes.BRIGHT, units, level);
+        this.runTransaction(command);
+    }
+
+
     function NewCm11A() {
         var cm11Obj = Object.create(CM11A);
         return cm11Obj;
@@ -200,25 +214,26 @@
 
     function SerialRead(data) {
         var buffer = new Buffer(data);
+        var readData = new Uint8Array(buffer);
 
-        if(buffer.length > 0) {
+        if(readData.length > 0) {
             var usedBuffer = false;
 
             if(this.currentTrans) {
-                usedBuffer = this.currentTrans.handleMessage(buffer);
+                usedBuffer = this.currentTrans.handleMessage(readData);
             }
 
             if(!usedBuffer) {
-                if(buffer[0] == cm11aCodes.rx.POLL_REQUEST) {
-                    var pollResp = transactions.PollResponse(this, buffer);
+                if(readData[0] == cm11aCodes.rx.POLL_REQUEST) {
+                    var pollResp = transactions.PollResponse(this, readData);
                     this.runTransaction(pollResp);
                 }
-                else if(buffer[0] == cm11aCodes.rx.POLL_POWER_FAIL) {
+                else if(readData[0] == cm11aCodes.rx.POLL_POWER_FAIL) {
                     var setClock = transactions.SetClock(this);
                     this.runTransaction(setClock);
                 }
-                else if(buffer[0] == cm11aCodes.rx.POLL_EEPROM_ADDRESS) {
-                    var eepromAddress = transactions.EepromAddress(this, buffer);
+                else if(readData[0] == cm11aCodes.rx.POLL_EEPROM_ADDRESS) {
+                    var eepromAddress = transactions.EepromAddress(this, readData);
                     this.runTransaction(eepromAddress);
                 }
             }
