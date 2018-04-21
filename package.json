@@ -1,5 +1,5 @@
 {
-  "name": "cm11a",
+  "name": "cm11a-js",
   "version": "0.1.0",
   "description": "A Node.js module for communicating with a CM11A X10 controller.",
   "main": "index.js",
@@ -8,18 +8,18 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AlanDThiessen/cm11a.git"
+    "url": "git+https://github.com/AlanDThiessen/cm11a-js.git"
   },
   "keywords": [
-    "cm11a",
+    "cm11",
     "x10"
   ],
   "author": "Alan Thiessen",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/AlanDThiessen/cm11a/issues"
+    "url": "https://github.com/AlanDThiessen/cm11a-js/issues"
   },
-  "homepage": "https://github.com/AlanDThiessen/cm11a#readme",
+  "homepage": "https://github.com/AlanDThiessen/cm11a-js#readme",
   "dependencies": {
     "serialport": "^6.2.0"
   }
