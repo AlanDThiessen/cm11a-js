@@ -30,6 +30,7 @@
     const SerialPort = require('serialport');
     const cm11aCodes = require('./CM11ACodes');
     const transactions = require('./CM11ATransactions');
+    const x10Address = require('./UnitAddress');
 
     var CM11A_BUAD = 4800;
 
@@ -177,25 +178,42 @@
     }
 
 
-    function TurnOn(units) {
+    function AddressToUnit(addresses) {
+        var units = [];
+
+        addresses.forEach(function(addr) {
+            var code = addr.toUpperCase();
+            units.push(x10Address(code.substr(0, 1), code.substr(1)));
+        });
+
+        return units;
+    }
+
+
+    function TurnOn(addr) {
+        var units = AddressToUnit(addr);
         var command = transactions.Command(this, cm11aCodes.functionCodes.ON, units);
         this.runTransaction(command);
     }
 
 
-    function TurnOff(units) {
+    function TurnOff(addr) {
+        var units = AddressToUnit(addr);
         var command = transactions.Command(this, cm11aCodes.functionCodes.OFF, units);
         this.runTransaction(command);
     }
 
 
-    function Dim(units, level) {
+
+    function Dim(addr, level) {
+        var units = AddressToUnit(addr);
         var command = transactions.Command(this, cm11aCodes.functionCodes.DIM, units, level);
         this.runTransaction(command);
     }
 
 
-    function Bright(units, level) {
+    function Bright(addr, level) {
+        var units = AddressToUnit(addr);
         var command = transactions.Command(this, cm11aCodes.functionCodes.BRIGHT, units, level);
         this.runTransaction(command);
     }
