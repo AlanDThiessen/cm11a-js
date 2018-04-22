@@ -32,27 +32,23 @@
 const SerialPort = require('serialport/test');
 const MockBinding = SerialPort.Binding;
 const CM11A = require('../src/CM11A');
-const x10Addr = require('../src/UnitAddress');
 const cm11aCodes = require('../src/CM11ACodes');
 
 // Create a port and enable the echo and recording.
 MockBinding.createPort('/dev/MOCK', { echo: true, readyData: [0x00] });
 
-/*
-var port = new SerialPort('/dev/MOCK', {
-    baudRate: 4800
-});
-*/
 var cm11 = CM11A();
 cm11.on('unitStatus', onUnitStatus);
 cm11.on('status', onStatus);
 cm11.on('close', onClose);
 
 cm11.start('/dev/MOCK');
-var addr = x10Addr('A', '1');
-//port.write([cm11aCodes.rx.POLL_REQUEST]);
-cm11.turnOn([addr]);
-//cm11.stop();
+var addr = ['A1', 'a2'];
+cm11.turnOn(addr);
+cm11.dim(addr, 11);
+cm11.bright(addr, 11);
+cm11.turnOff(addr);
+cm11.stop();
 
 setTimeout(function() {
     cm11.stop();
