@@ -42,17 +42,17 @@ cm11.on('unitStatus', onUnitStatus);
 cm11.on('status', onStatus);
 cm11.on('close', onClose);
 
-cm11.start('/dev/MOCK');
+//cm11.start('/dev/MOCK');
+cm11.start('/dev/ttyUSB0');
 var addr = ['A1', 'a2'];
 cm11.turnOn(addr);
 cm11.dim(addr, 11);
 cm11.bright(addr, 11);
 cm11.turnOff(addr);
-cm11.stop();
 
 setTimeout(function() {
     cm11.stop();
-}, 2000);
+}, 9000);
 
 
 function onClose() {
