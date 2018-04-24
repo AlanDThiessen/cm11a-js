@@ -1,6 +1,6 @@
 {
   "name": "cm11a-js",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A Node.js module for communicating with a CM11A X10 controller.",
   "main": "index.js",
   "scripts": {

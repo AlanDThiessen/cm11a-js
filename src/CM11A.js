@@ -190,6 +190,17 @@
     }
 
 
+    function UnitToAddress(units) {
+        var addresses = [];
+
+        units.forEach(function(unit) {
+            addresses.push(unit.house + unit.unit);
+        });
+
+        return addresses;
+    }
+
+
     function TurnOn(addr) {
         var units = AddressToUnit(addr);
         var command = transactions.Command(this, cm11aCodes.functionCodes.ON, units);
@@ -291,11 +302,26 @@
     }
 
 
+    function LookupX10Function(x10Func) {
+        var codes = Object.keys(cm11aCodes.functionCodes);
+        var funcName = '';
+
+        for(var cntr = 0; cntr < codes.length; cntr++) {
+            if(cm11aCodes.functionCodes[codes[cntr]] == x10Func) {
+                funcName = codes[cntr].toString();
+                break;
+            }
+        }
+
+        return funcName;
+    }
+
+
     function NotifyUnitStatus(x10Function, houseCode, level, units ) {
         if(this.events.unitStatus !== undefined) {
             this.events.unitStatus( {
-                'units': units,
-                'x10Function': x10Function,
+                'units': UnitToAddress(units),
+                'x10Function': LookupX10Function(x10Function),
                 'level': level
             });
         }
