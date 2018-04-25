@@ -53,7 +53,7 @@
 
 
     function SetAddress(house, unit, addr) {
-        if(addr === null) {
+        if(addr === undefined) {
             // Normal method, set based on house and unit code
             if (cm11aCodes.houseCodes.hasOwnProperty(house) || cm11aCodes.unitCodes.hasOwnProperty(unit)) {
                 this.house = house;
