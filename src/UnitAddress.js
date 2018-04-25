@@ -39,18 +39,39 @@
     };
 
 
-    function SetAddress(house, unit) {
-        if (cm11aCodes.houseCodes.hasOwnProperty(house) || cm11aCodes.unitCodes.hasOwnProperty(unit)) {
-            this.house = house;
-            this.unit = unit;
-            this.address = ((cm11aCodes.houseCodes[house] << 4) | (cm11aCodes.unitCodes[unit]) & 0xFF);
+    function GetDictKeyFromValue(dict, value) {
+        var key;
+
+        for(key in dict) {
+            if((dict.hasOwnProperty(key) && dict[key] == value)) {
+                break;
+            }
+        }
+
+        return key;
+    }
+
+
+    function SetAddress(house, unit, addr) {
+        if(addr === null) {
+            // Normal method, set based on house and unit code
+            if (cm11aCodes.houseCodes.hasOwnProperty(house) || cm11aCodes.unitCodes.hasOwnProperty(unit)) {
+                this.house = house;
+                this.unit = unit;
+                this.address = ((cm11aCodes.houseCodes[house] << 4) | (cm11aCodes.unitCodes[unit]) & 0xFF);
+            }
+        }
+        else {
+            this.house = GetDictKeyFromValue(cm11aCodes.houseCodes, (addr >> 4));
+            this.unit = GetDictKeyFromValue(cm11aCodes.unitCodes, (addr & 0x0F));
+            this.address = addr;
         }
     }
 
 
-    function UnitAddress(house, unit) {
+    function UnitAddress(house, unit, addr) {
         var address = Object.create(unitAddress);
-        address.SetAddress(house, unit);
+        address.SetAddress(house, unit, addr);
         return address;
     }
 

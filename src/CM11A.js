@@ -243,6 +243,7 @@
 
 
     function SerialWrite(data, timer) {
+        console.log('CM11A Tx: ' + data);
         this.serial.write(data, function(error) {
             if(error) {
                 console.log('Error Writing to CM11A.');
@@ -263,6 +264,7 @@
         var readData = new Uint8Array(buffer);
 
         if(readData.length > 0) {
+            console.log('CM11A Rx: ' + readData);
             var usedBuffer = false;
 
             if(this.currentTrans) {
@@ -279,8 +281,9 @@
                     this.runTransaction(setClock);
                 }
                 else if(readData[0] == cm11aCodes.rx.POLL_EEPROM_ADDRESS) {
-                    var eepromAddress = transactions.EepromAddress(this, readData);
-                    this.runTransaction(eepromAddress);
+                    // TODO: One day, implement macros?
+                    //var eepromAddress = transactions.EepromAddress(this, readData);
+                    //this.runTransaction(eepromAddress);
                 }
             }
         }

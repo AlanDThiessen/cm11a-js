@@ -39,11 +39,7 @@
 
 
     function EAStart() {
-        if(this.data.length > 0) {
-            if(this.data[0] == cm11aCodes.rx.POLL_REQUEST) {
-                this.ctrl.write([cm11aCodes.tx.POLL_RESPONSE]);
-            }
-        }
+        // At this time, macros mean nothing to us.
 
         this.done();
     }
