@@ -31,6 +31,11 @@
     var cm11aCodes = require('./CM11ACodes');
     var x10Address = require('./UnitAddress');
 
+    const MAX_LEVEL_STATUS = 210;   // When reporting status, the maximum level difference is 210
+
+    // Apparently, dim/bright status responses do not always contain the unit codes, but instead
+    // imply the previously-addressed units.
+    var prevUnits = [];
 
     function PollResponse(ctrl, data) {
         var trans = Transaction(ctrl, PRStart, PRRxCallback);
@@ -99,7 +104,6 @@
     2018-04-25 00:19:30.090 x10-cm11: CM11A Rx: 1
     2018-04-25 00:19:30.097 x10-cm11: CM11A Rx: 101
     2018-04-25 00:19:30.099 x10-cm11: CM11A Rx: 90
-    2018-04-25 00:19:30.101 x10-cm11: CM11A Tx: 195
 
 
     2018-04-25 00:20:13.557 x10-cm11: CM11A Rx: 90
@@ -114,11 +118,16 @@
         var funcAddrMask = this.data.shift();
         var units = [];
         var funcs = {};
+        var currentLevelFunc = undefined;
 
         // Gather all units with this function
         for(let i = 0; i < this.data.length; i++) {
-            // Is this byte an address or a function?
-            if(funcAddrMask & 0x01) {
+            if(currentLevelFunc) {
+                // Calculate a percentage of the max level from this byte
+                currentLevelFunc.level = Math.round(this.data[i] / MAX_LEVEL_STATUS * 100);
+                currentLevelFunc = undefined;
+            }
+            else if(funcAddrMask & 0x01) {
                 // This Data byte is a function
                 var func = this.data[i] & 0x0F;
                 var house = this.data[i] >> 4;
@@ -137,6 +146,16 @@
                     };
                 }
 
+                // If this is dim/bright, then we need to get the level from the next byte
+                if((func == cm11aCodes.functionCodes.DIM) || (func == cm11aCodes.functionCodes.BRIGHT)) {
+                    currentLevelFunc = funcs[func];
+
+                    // If this Dim/Bright command does not have any units, assume the previously-reported units
+                    if(currentLevelFunc.units.length === 0) {
+                        currentLevelFunc.units = [].concat(prevUnits);
+                    }
+                }
+
                 units = [];
             }
             else {
@@ -151,6 +170,9 @@
         for(var func in funcs) {
             if(funcs.hasOwnProperty(func)) {
                 this.ctrl.notifyUnitStatus(func, funcs[func].house, funcs[func].level, funcs[func].units);
+
+                // Copy the units to the previously addressed units.
+                prevUnits = [].concat(funcs[func].units);
             }
         }
     }
@@ -182,8 +204,6 @@
             this.done();
         }
     }
-
-
 
 
     module.exports = PollResponse;
