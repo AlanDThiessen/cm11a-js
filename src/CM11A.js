@@ -96,23 +96,29 @@
      * @returns {boolean}
      */
     function Start(device) {
-        if(!this.running) {
-            this.serial = new SerialPort(device, {
-                baudRate: 4800
-            });
+        var ctrl = this;
 
-            var ctrl = this;
-            this.serial.on('data', function(data) {
-                ctrl.read(data);
-            });
-            this.serial.on('error', HandleError);
-            this.serial.on('close', function() {
-                ctrl.stopped();
-            });
-            this.running = true;
-        }
+        return new Promise(function(resolve, reject) {
+            if (!ctrl.running) {
+                ctrl.serial = new SerialPort(device, {
+                    baudRate: 4800
+                });
 
-        return this.running;
+                ctrl.serial.on('data', function (data) {
+                    ctrl.read(data);
+                });
+                ctrl.serial.on('error', HandleError);
+                ctrl.serial.on('close', function () {
+                    ctrl.stopped();
+                });
+                ctrl.running = true;
+
+                // Wait for 1-1/2 seconds to see if we need to respond to a poll failure
+                setTimeout(function() {
+                    resolve(ctrl.running);
+                }, 3000);
+            }
+        });
     }
 
 
@@ -277,7 +283,7 @@
                     this.runTransaction(pollResp);
                 }
                 else if(readData[0] == cm11aCodes.rx.POLL_POWER_FAIL) {
-                    var setClock = transactions.SetClock(this);
+                    var setClock = transactions.SetClock(this, readData);
                     this.runTransaction(setClock);
                 }
                 else if(readData[0] == cm11aCodes.rx.POLL_EEPROM_ADDRESS) {

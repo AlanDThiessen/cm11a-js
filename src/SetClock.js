@@ -31,7 +31,7 @@
     var cm11aCodes = require('./CM11ACodes');
 
 
-    function SetClock(ctrl) {
+    function SetClock(ctrl, data) {
         var trans = Transaction(ctrl, SCStart, null);
         trans.data = [].concat(data);
         return trans;
