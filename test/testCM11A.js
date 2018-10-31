@@ -35,28 +35,36 @@ const CM11A = require('../src/CM11A');
 const cm11aCodes = require('../src/CM11ACodes');
 
 // Create a port and enable the echo and recording.
-MockBinding.createPort('/dev/MOCK', { echo: true, readyData: [0x00] });
+MockBinding.createPort('/dev/MOCK', { echo: true, readyData: [] });
 
 var cm11 = CM11A();
 cm11.on('unitStatus', onUnitStatus);
 cm11.on('status', onStatus);
 cm11.on('close', onClose);
 
-//cm11.start('/dev/MOCK');
-cm11.start('/dev/ttyUSB0').then(RunTest);
+cm11.start('/dev/MOCK');
+//cm11.start('/dev/ttyUSB0').then(RunTest);
 
 function RunTest() {
-    var addr = ['A1', 'a2'];
-    cm11.turnOn(addr);
-    cm11.dim(addr, 11);
-    cm11.bright(addr, 11);
-    cm11.turnOff(addr);
+    //TestLamps();
+    cm11.setClock();
+    cm11.status();
 
     // Give time for the test to run
     setTimeout(function () {
         cm11.stop();
     }, 9000);
 }
+
+
+function TestLamps() {
+    var addr = ['A1', 'a2'];
+    cm11.turnOn(addr);
+    cm11.dim(addr, 11);
+    cm11.bright(addr, 11);
+    cm11.turnOff(addr);
+}
+
 
 function onClose() {
     console.log('CM11 Closed');

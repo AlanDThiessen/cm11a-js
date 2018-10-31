@@ -65,6 +65,7 @@
         dim: Dim,
         bright: Bright,
         status: Status,
+        setClock: SetClock,
 
         // Callback methods
         notifyUnitStatus: NotifyUnitStatus,
@@ -239,6 +240,12 @@
     function Status() {
         var status = transactions.StatusRequest(this);
         this.runTransaction(status);
+    }
+
+
+    function SetClock() {
+        var setClock = transactions.SetClock(this, []);
+        this.runTransaction(setClock);
     }
 
 

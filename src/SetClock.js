@@ -39,12 +39,45 @@
 
 
     function SCStart() {
-        // For now, just send the header to shut up the device
-        if(this.data.length > 0) {
-            if(this.data[0] == cm11aCodes.rx.POLL_POWER_FAIL) {
-                this.ctrl.write([cm11aCodes.tx.POLL_PF_RESP]);
-            }
+        var now = new Date();
+        var start = new Date(now.getFullYear(), 0, 0);
+        var dayOfYear = Math.floor((now - start) / (1000 * 60 * 60 * 24));
+        var reverseDay = 0;
+        var dateData = [];
+
+        dateData.push(cm11aCodes.tx.POLL_PF_RESP);
+        dateData.push(now.getSeconds() & 0xFF);
+
+        // If it's an odd hour, then we need to add 60 to the minutes
+        if((now.getHours() % 2) === 0) {
+            dateData.push(now.getMinutes() & 0xFF);
         }
+        else {
+            dateData.push((60 + now.getMinutes()) & 0xFF);
+        }
+
+        // CM11 takes hours / 2 (0 - 11)
+        dateData.push(Math.floor(now.getHours() / 2) & 0xFF);
+
+        // The day of the year is in reverse order
+        for(let mask = 0x0001; mask <= 0x0100; mask <<= 1) {
+            reverseDay <<= 1;
+            reverseDay |= (dayOfYear & mask) ? 0x01 : 0x00;
+        }
+
+        reverseDay <<= 7;
+
+        // Day of week mask (SMTWTFS)
+        reverseDay |= (0x01 << (6 - now.getDay()));
+
+        dateData.push((reverseDay >> 8) & 0xFF);
+        dateData.push(reverseDay & 0xFF);
+
+        // For now, just monitor housecode A,
+        //    set Timer Purge and Monitor Status Cleared flags
+        dateData.push(((cm11aCodes.houseCodes.A & 0xFF) << 4) | 0x05);
+
+        this.ctrl.write(dateData);
 
         this.done();
     }
