@@ -32,8 +32,11 @@
 
 
     function SetClock(ctrl, data) {
-        var trans = Transaction(ctrl, SCStart, null);
+        var trans = Transaction(ctrl, SCStart, SCCallback);
         trans.data = [].concat(data);
+        trans.checksum = 0;
+        trans.checksumValid = false;
+        trans.numTxAttempts = 0;
         return trans;
     }
 
@@ -43,21 +46,21 @@
         var start = new Date(now.getFullYear(), 0, 0);
         var dayOfYear = Math.floor((now - start) / (1000 * 60 * 60 * 24));
         var reverseDay = 0;
-        var dateData = [];
+        this.txData = [];
 
-        dateData.push(cm11aCodes.tx.POLL_PF_RESP);
-        dateData.push(now.getSeconds() & 0xFF);
+        this.txData.push(cm11aCodes.tx.POLL_PF_RESP);
+        this.txData.push(now.getSeconds() & 0xFF);
 
         // If it's an odd hour, then we need to add 60 to the minutes
         if((now.getHours() % 2) === 0) {
-            dateData.push(now.getMinutes() & 0xFF);
+            this.txData.push(now.getMinutes() & 0xFF);
         }
         else {
-            dateData.push((60 + now.getMinutes()) & 0xFF);
+            this.txData.push((60 + now.getMinutes()) & 0xFF);
         }
 
         // CM11 takes hours / 2 (0 - 11)
-        dateData.push(Math.floor(now.getHours() / 2) & 0xFF);
+        this.txData.push(Math.floor(now.getHours() / 2) & 0xFF);
 
         // The day of the year is in reverse order
         for(let mask = 0x0001; mask <= 0x0100; mask <<= 1) {
@@ -70,16 +73,55 @@
         // Day of week mask (SMTWTFS)
         reverseDay |= (0x01 << (6 - now.getDay()));
 
-        dateData.push((reverseDay >> 8) & 0xFF);
-        dateData.push(reverseDay & 0xFF);
+        this.txData.push((reverseDay >> 8) & 0xFF);
+        this.txData.push(reverseDay & 0xFF);
 
         // For now, just monitor housecode A,
         //    set Timer Purge and Monitor Status Cleared flags
-        dateData.push(((cm11aCodes.houseCodes.A & 0xFF) << 4) | 0x05);
+        this.txData.push(((cm11aCodes.houseCodes.A & 0xFF) << 4) | 0x05);
 
-        this.ctrl.write(dateData);
+        for(let cntr = 1; cntr < this.txData.length; cntr++) {
+            this.checksum += this.txData[cntr];
+        }
 
-        this.done();
+        this.checksum &= 0x00FF;
+
+        this.ctrl.write(this.txData);
+        this.numTxAttempts++;
+    }
+
+
+    function SCCallback(data) {
+        var done = false;
+
+        if(data.length > 0) {
+            if(this.checksumValid == false) {
+                if (data[0] == this.checksum) {
+                    this.checksumValid = true;
+                }
+            }
+            else {
+                if (data[0] === 0x55) {
+                    done = true;
+                }
+            }
+        }
+
+        if(done) {
+            this.done();
+        }
+        else {
+            if(this.checksumValid) {
+                this.ctrl.write([0x00]);
+            }
+            else if(this.numTxAttempts < 4) {
+                this.ctrl.write(this.txData);
+                this.numTxAttempts++;
+            }
+            else {
+                this.done();
+            }
+        }
     }
 
 

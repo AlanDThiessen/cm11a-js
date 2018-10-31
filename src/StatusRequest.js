@@ -113,11 +113,20 @@
 
 
     function ParseStatus(data) {
+        var dayOfYear = (data[5] << 1) + ((data[6] & 0x80) >> 7);
+        var reverseDay = 0;
+
+        // The day of the year is in reverse order
+        for(let mask = 0x0001; mask <= 0x0100; mask <<= 1) {
+            reverseDay <<= 1;
+            reverseDay |= (dayOfYear & mask) ? 0x01 : 0x00;
+        }
+
         return {
             batteryTimer: (data[0] << 8) | (data[1]),
             firmwareRev: data[7] & 0x0F,
             time: {
-                dayOfYear: data[5] + 1 + ((data[6] & 0x80) << 1),
+                dayOfYear: reverseDay,
                 hours: (data[4] * 2) + (data[3] >= 60) ? 1 : 0,
                 minutes: data[3] % 60,
                 seconds: data[2]
