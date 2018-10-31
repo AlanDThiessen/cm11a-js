@@ -43,7 +43,7 @@
 
     function SCStart() {
         var now = new Date();
-        var start = new Date(now.getFullYear(), 0, 0);
+        var start = new Date(now.getFullYear(), 0, 1);
         var dayOfYear = Math.floor((now - start) / (1000 * 60 * 60 * 24));
         var reverseDay = 0;
         this.txData = [];
