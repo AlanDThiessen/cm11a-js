@@ -21,6 +21,6 @@
   },
   "homepage": "https://github.com/AlanDThiessen/cm11a-js#readme",
   "dependencies": {
-    "serialport": "^6.2.0"
+    "serialport": "^8.0.6"
   }
 }
