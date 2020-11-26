@@ -2,7 +2,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (c) 2018 Alan Thiessen
+ * Copyright (c) 2020 Alan Thiessen
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,8 +30,8 @@
     var TransactionObj = {
         'init': Init,
         'run': Run,
-        'start': DefaultStart,
-        'handleMessage': DefaultHandleMessage,
+        'start': Start,
+        'handleMessage': HandleMessage,
         'done': Done,
         'error': Error
     };
@@ -41,7 +41,6 @@
      * @param ctrl
      * @param start - Must be a real function
      * @param rxCallback - Can be null or a function reference
-     * @param isComplete - Must be a real function
      */
     function Init(ctrl, start, rxCallback) {
         if(typeof(start) !== 'function') {
@@ -53,13 +52,13 @@
         else {
             this.promise = undefined;
             this.ctrl = ctrl;
-            this.start = start;
-            this.handleMessage = rxCallback;
+            this.startCallback = start;
+            this.rxCallback = rxCallback;
         }
     }
 
     function Run() {
-        var trans = this;
+        let trans = this;
 
         return new Promise(function(resolve, reject) {
             trans.resolve = resolve;
@@ -85,13 +84,23 @@
     }
 
 
-    function DefaultStart() {
-        this.Done();
+    function Start() {
+        if(typeof(this.startCallback) === 'function') {
+            this.startCallback();
+        }
+        else {
+            this.done();
+        }
     }
 
 
-    function DefaultHandleMessage(data) {
-        return false;
+    function HandleMessage(data) {
+        if(typeof(this.rxCallback) === 'function') {
+            return this.rxCallback(data);
+        }
+        else {
+            return false;
+        }
     }
 
 
@@ -99,12 +108,11 @@
      * @param ctrl
      * @param start
      * @param rxCallBack
-     * @param isComplete
      * @returns {TransactionObj}
      * @constructor
      */
     function Transaction(ctrl, start, rxCallBack) {
-        var trans = Object.create(TransactionObj);
+        let trans = Object.create(TransactionObj);
         trans.init(ctrl, start, rxCallBack);
         return trans;
     }
