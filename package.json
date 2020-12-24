@@ -4,7 +4,7 @@
   "description": "A Node.js module for communicating with a CM11A X10 controller.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node_modules/.bin/jasmine --config=jasmine.json --reporter=jasmine-console-reporter"
   },
   "repository": {
     "type": "git",
@@ -22,5 +22,9 @@
   "homepage": "https://github.com/AlanDThiessen/cm11a-js#readme",
   "dependencies": {
     "serialport": "^8.0.6"
+  },
+  "devDependencies": {
+    "jasmine": "^3.6.3",
+    "jasmine-console-reporter": "^3.1.0"
   }
 }
