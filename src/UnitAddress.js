@@ -40,7 +40,7 @@
 
 
     function GetDictKeyFromValue(dict, value) {
-        var key;
+        let key;
 
         for(key in dict) {
             if((dict.hasOwnProperty(key) && dict[key] == value)) {
@@ -52,7 +52,7 @@
     }
 
 
-    function SetAddress(house, unit, addr) {
+    function SetAddress(house, unit, addr, isFunction = false) {
         if(addr === undefined) {
             // Normal method, set based on house and unit code
             if (cm11aCodes.houseCodes.hasOwnProperty(house) || cm11aCodes.unitCodes.hasOwnProperty(unit)) {
@@ -63,15 +63,22 @@
         }
         else {
             this.house = GetDictKeyFromValue(cm11aCodes.houseCodes, (addr >> 4));
-            this.unit = GetDictKeyFromValue(cm11aCodes.unitCodes, (addr & 0x0F));
+
+            if(isFunction) {
+                this.unit = GetDictKeyFromValue(cm11aCodes.functionCodes, (addr & 0x0F));
+            }
+            else {
+                this.unit = GetDictKeyFromValue(cm11aCodes.unitCodes, (addr & 0x0F));
+            }
+
             this.address = addr;
         }
     }
 
 
-    function UnitAddress(house, unit, addr) {
-        var address = Object.create(unitAddress);
-        address.SetAddress(house, unit, addr);
+    function UnitAddress(house, unit, addr, isFunction = false) {
+        let address = Object.create(unitAddress);
+        address.SetAddress(house, unit, addr, isFunction);
         return address;
     }
 
