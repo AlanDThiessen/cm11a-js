@@ -256,7 +256,7 @@
 
 
     function SerialWrite(data, timer) {
-        console.log('CM11A Tx: ' + data);
+        console.log(`CM11A Tx: ${data.reduce((y, x) => y + ('00' + x.toString(16)).substr(-2) + ' ', '0x')}`);
         this.serial.write(data, function(error) {
             if(error) {
                 console.log('Error Writing to CM11A.');
@@ -273,11 +273,11 @@
 
 
     function SerialRead(data) {
-        var buffer = new Buffer(data);
+        var buffer = new Buffer.from(data);
         var readData = new Uint8Array(buffer);
 
         if(readData.length > 0) {
-            console.log('CM11A Rx: ' + readData);
+            console.log(`CM11A Rx: ${readData.reduce((y, x) => y + ('00' + x.toString(16)).substr(-2) + ' ', '0x')}`);
             var usedBuffer = false;
 
             if(this.currentTrans) {
