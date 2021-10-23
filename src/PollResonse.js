@@ -2,7 +2,7 @@
  *
  * The MIT License (MIT)
  *
- * Copyright (c) 2018 Alan Thiessen
+ * Copyright (c) 2021 Alan Thiessen
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,21 +27,19 @@
 (function() {
     'use strict';
 
-    var Transaction = require('./Transaction');
-    var cm11aCodes = require('./CM11ACodes');
-    var x10Address = require('./UnitAddress');
+    const Transaction = require('./Transaction');
+    const cm11aCodes = require('./CM11ACodes');
+    const x10Address = require('./UnitAddress');
 
     const MAX_LEVEL_STATUS = 210;   // When reporting status, the maximum level difference is 210
 
-    // Apparently, dim/bright status responses do not always contain the unit codes, but instead
-    // imply the previously-addressed units.
-    var prevUnits = [];
+    // Need to keep unit history until a function code is received
+    let unitHistory = {};
 
     function PollResponse(ctrl, data) {
-        var trans = Transaction(ctrl, PRStart, PRRxCallback);
+        let trans = Transaction(ctrl, PRStart, PRRxCallback);
         trans.data = [].concat(data);
         trans.numExpected = undefined;
-
         trans.ParseData = ParseData;
 
         return trans;
@@ -49,7 +47,7 @@
 
 
     function PRStart() {
-        var done = true;
+        let done = true;
 
         if(this.data.length > 0) {
             if(this.data[0] == cm11aCodes.rx.POLL_REQUEST) {
@@ -115,77 +113,63 @@
 */
 
     function ParseData() {
-        var funcAddrMask = this.data.shift();
-        var units = [];
-        var funcs = {};
-        var currentLevelFunc = undefined;
+        // This function won't be called unless we have at least one byte in the array
+        let funcAddrMask = this.data.shift();
+        let currValue = this.data.shift();
 
-        // Gather all units with this function
-        for(let i = 0; i < this.data.length; i++) {
-            if(currentLevelFunc) {
-                // Calculate a percentage of the max level from this byte
-                currentLevelFunc.level = Math.round(this.data[i] / MAX_LEVEL_STATUS * 100);
-                currentLevelFunc = undefined;
-            }
-            else if(funcAddrMask & 0x01) {
-                // This Data byte is a function
-                var func = this.data[i] & 0x0F;
-                var house = this.data[i] >> 4;
+        while(currValue !== undefined) {
+            if(funcAddrMask & 0x01) {
+                let house = x10Address(null, null, currValue, true).house;
+                let funcName = x10Address(null, null, currValue, true).unit;
+                let func = cm11aCodes.functionCodes[funcName];
+                let deltaLevel = 0;
 
-                // TODO: Can there be multiple statuses for different house codes?
-                //       i.e: Do functions and house codes need to be unique?
-                if(funcs.hasOwnProperty(func)) {
-                    funcs[func].units = funcs[func].units.concat(units);
-                }
-                else {
-                    funcs[func] = {
-                        house: house,
-                        units: [].concat(units),
-                        // TODO: Fill out level for Dim/Bright
-                        level: 0
-                    };
-                }
+                if((house !== undefined) && (func !== undefined)) {
+                    // DIM and BRIGHT are followed by a level byte
+                    if ((func == cm11aCodes.functionCodes.DIM) || (func == cm11aCodes.functionCodes.BRIGHT)) {
+                        let level = this.data.shift();
 
-                // If this is dim/bright, then we need to get the level from the next byte
-                if((func == cm11aCodes.functionCodes.DIM) || (func == cm11aCodes.functionCodes.BRIGHT)) {
-                    currentLevelFunc = funcs[func];
+                        if (level !== undefined) {
+                            deltaLevel = Math.round(level / MAX_LEVEL_STATUS * 100);
+                        }
+                    }
 
-                    // If this Dim/Bright command does not have any units, assume the previously-reported units
-                    if(currentLevelFunc.units.length === 0) {
-                        currentLevelFunc.units = [].concat(prevUnits);
+                    if (unitHistory.hasOwnProperty(house)) {
+                        this.ctrl.notifyUnitStatus(func, house, deltaLevel, unitHistory[house]);
+                        unitHistory[house] = [];
                     }
                 }
-
-                units = [];
             }
             else {
-                // This Data byte is an address
-                units.push(x10Address(null, null, this.data[i]));
+                let address = x10Address(null, null, currValue);
+
+                if((address.house !== undefined) && (address.unit !== undefined)) {
+                    if (!unitHistory.hasOwnProperty(address.house)) {
+                        unitHistory[address.house] = [];
+                    }
+
+                    // Add this unit to the list if not already on it
+                    if (unitHistory[address.house].findIndex((element) => {element.unit == address.unit}) === -1) {
+                        unitHistory[address.house].push(address);
+                    }
+                }
             }
 
             funcAddrMask >>= 1;
-        }
-
-        // Now, notify status
-        for(var func in funcs) {
-            if(funcs.hasOwnProperty(func)) {
-                this.ctrl.notifyUnitStatus(func, funcs[func].house, funcs[func].level, funcs[func].units);
-
-                // Copy the units to the previously addressed units.
-                prevUnits = [].concat(funcs[func].units);
-            }
+            currValue = this.data.shift();
         }
     }
 
     function PRRxCallback(data) {
-        var done = false;
+        let done = false;
 
         if(data.length > 0) {
             if(this.numExpected === undefined) {
                 this.numExpected = data.shift();
                 this.data = this.data.concat(data);
 
-                if(this.numExpected === 0) {
+                // The CM11A never buffers more than 10 bytes
+                if((this.numExpected === 0) || (this.numExpected > 10)) {
                     done = true;
                 }
             }
@@ -193,7 +177,7 @@
                 this.data = this.data.concat(data);
             }
 
-            if(this.data.length >= this.numExpected) {
+            if(!done && (this.data.length >= this.numExpected) && (this.data.length >= 1)) {
                 this.ParseData();
                 done = true;
             }
@@ -204,7 +188,6 @@
             this.done();
         }
     }
-
 
     module.exports = PollResponse;
 
