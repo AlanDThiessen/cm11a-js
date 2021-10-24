@@ -188,10 +188,3 @@ When the serial port has been closed, the specified callback function will be ca
 
 ### Heyu
 Kudos to the [Heyu](https://www.heyu.org/) project.  Heyu provides a complete interface to the CM11A (and other devices).  The documentation and research they have done has been priceless!  Heyu ran my house for many years!
-
-### Contributors
-
-The following people have contributed code to cm11a-js.
-
-- **Craig Watkins** - Provided updates to the PollResponse algorithm and help test the changes.
-
