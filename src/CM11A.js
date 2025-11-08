@@ -27,7 +27,7 @@
 (function() {
     'use strict';
 
-    const SerialPort = require('serialport');
+    const { SerialPort } = require('serialport');
     const cm11aCodes = require('./CM11ACodes');
     const transactions = require('./CM11ATransactions');
     const x10Address = require('./UnitAddress');
@@ -101,7 +101,8 @@
 
         return new Promise(function(resolve, reject) {
             if (!ctrl.running) {
-                ctrl.serial = new SerialPort(device, {
+                ctrl.serial = new SerialPort({
+                    path: device,
                     baudRate: 4800
                 });
 
@@ -256,7 +257,7 @@
 
 
     function SerialWrite(data, timer) {
-        console.log(`CM11A Tx: ${data.reduce((y, x) => y + ('00' + x.toString(16)).substr(-2) + ' ', '0x')}`);
+        console.log('CM11A Tx: ' + data);
         this.serial.write(data, function(error) {
             if(error) {
                 console.log('Error Writing to CM11A.');
@@ -277,7 +278,7 @@
         var readData = new Uint8Array(buffer);
 
         if(readData.length > 0) {
-            console.log(`CM11A Rx: ${readData.reduce((y, x) => y + ('00' + x.toString(16)).substr(-2) + ' ', '0x')}`);
+            console.log('CM11A Rx: ' + readData);
             var usedBuffer = false;
 
             if(this.currentTrans) {
